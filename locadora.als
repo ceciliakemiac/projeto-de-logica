@@ -46,6 +46,13 @@ pred anosInativos[i: Inativo] {
 pred anosAtivos[a: Ativo] {
 	#a.anos <= 5
 }
+<<<<<<< HEAD
+=======
+//fact AnosDeUso {
+	//all v: Veiculo | one inativos.v => #v.anos > 5
+	//all v: Veiculo | one ativos.v => #v.anos <= 5
+//}
+>>>>>>> 14512c21aa09bd8b09ecd03998e84b60e038c672
 
 pred show [ ] { }
 
