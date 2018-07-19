@@ -7,7 +7,9 @@ one sig Locadora {
 }
 
 abstract sig Veiculo {
-	anos: some Ano
+	anos: some Ano,
+	cliente: one Cliente,
+	diasAlugado: some Dia
 }
 
 sig Inativo extends Veiculo { }
@@ -16,6 +18,10 @@ sig Ativo extends Veiculo { }
 sig Ano {
 	veiculo: one Veiculo
 }
+
+sig Dia { }
+
+sig Cliente { }
 
 ---------------------------------Fatos-------------------------------
 
@@ -39,6 +45,10 @@ fact {
 	all a: Ativo | anosAtivos[ a ]
 }
  
+fact Aluguel {
+	#diasAlugado	 <= 5
+}
+
 ---------------------------------------------------------------------
 
 pred anosInativos[i: Inativo] {
