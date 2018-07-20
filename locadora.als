@@ -1,55 +1,71 @@
 module Locadora
 
 one sig Locadora {
-	helicoptero: set Veiculo,
-	motocicleta: set Veiculo,
-	carro: set Veiculo
+	veiculo: set Veiculo
 }
 
 abstract sig Veiculo {
 	anos: some Ano,
-	cliente: one Cliente,
-	diasAlugado: some Dia
+	roda: set Roda,
+	cliente: lone Cliente,
+	diaAlugado: set Dia
 }
 
 sig Inativo extends Veiculo { }
 sig Ativo extends Veiculo { }
 
-sig Ano {
-	veiculo: one Veiculo
+sig Helicoptero in Veiculo { }
+sig Motocicleta in Veiculo { }
+sig Carro in Veiculo { }
+
+sig Ano { }
+
+sig Roda { }
+
+sig Cliente { 
+	veiculoAlugado: some Veiculo	
 }
 
 sig Dia { }
 
-sig Cliente {
-	veiculosAlugados: some Veiculo
-}
-
 ---------------------------------Fatos-------------------------------
 
-fact VeiculosCadastrados {
-	all v: Veiculo | one helicoptero.v => no motocicleta.v and no carro.v
-	all v: Veiculo | one motocicleta.v => no helicoptero.v and no carro.v
-	all v: Veiculo | one carro.v => no helicoptero.v and no motocicleta.v
-
-	all v: Veiculo | one helicoptero.v or one motocicleta.v or one carro.v
+fact VeiculosEmLocadora {
+	one l: Locadora | all v: Veiculo | v in l.veiculo
 }
 
-fact AnosParaCadaVeiculo {
-	anos = ~veiculo
-}
-
-fact {
-	all i: Inativo | anosInativos[ i ]
+fact AnosDeAtividade {
+	all i: Inativo | anosInativos[i]
+	all a: Ativo | anosAtivos[a]
 }
  
-fact {
-	all a: Ativo | anosAtivos[ a ]
+fact TotalVeiculo {
+	Helicoptero + Motocicleta + Carro = Veiculo
 }
- 
+
+fact NumeroRodas {
+	all c: Carro | rodaCarro[c]
+	all m: Motocicleta | rodaMotocicleta[m]
+	all h: Helicoptero | rodaHelicoptero[h]
+}
+
+fact DiasAlugados {
+	all v: Veiculo | #getDiasAlugados[v] <= 5
+	all v: Veiculo | veiculoAlugadoTemDias[v]
+}
+
 fact Aluguel {
-	#diasAlugado	 <= 5
-	veiculosAlugados = ~cliente
+	veiculoAlugado = ~cliente
+}
+
+fact SemDiasSeNaoAlugado {
+	all v: Veiculo | no v.cliente => no v.diaAlugado
+}
+
+fact {
+	no r: Roda | no roda.r
+	no d: Dia | no diaAlugado.d
+	no a: Ano | no anos.a
 }
 
 ---------------------------------------------------------------------
@@ -62,6 +78,32 @@ pred anosAtivos[a: Ativo] {
 	#a.anos <= 5
 }
 
+pred rodaHelicoptero [h: Helicoptero] {
+	#h.roda = 0
+}
+
+pred rodaMotocicleta [m: Motocicleta] {
+	#m.roda = 2
+}
+
+pred rodaCarro [c: Carro] {
+	#c.roda = 4
+}
+
+pred veiculoAlugadoTemDias[v: Veiculo] {
+	(#getCliente[v] > 0) => (#getDiasAlugados[v] > 0)
+}
+
+--------------------------------------Funcao---------------------------------------
+
+fun getDiasAlugados[v: Veiculo] : set Dia {
+	v.diaAlugado
+}
+
+fun getCliente[v: Veiculo] : lone Cliente {
+	v.cliente
+}
+
 pred show [ ] { }
 
-run show for 10
+run show for 4
