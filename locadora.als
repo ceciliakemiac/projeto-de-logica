@@ -21,7 +21,9 @@ sig Ano {
 
 sig Dia { }
 
-sig Cliente { }
+sig Cliente {
+	veiculosAlugados: some Veiculo
+}
 
 ---------------------------------Fatos-------------------------------
 
@@ -40,13 +42,14 @@ fact AnosParaCadaVeiculo {
 fact {
 	all i: Inativo | anosInativos[ i ]
 }
-
+ 
 fact {
 	all a: Ativo | anosAtivos[ a ]
 }
  
 fact Aluguel {
 	#diasAlugado	 <= 5
+	veiculosAlugados = ~cliente
 }
 
 ---------------------------------------------------------------------
