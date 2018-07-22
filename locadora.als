@@ -1,14 +1,12 @@
 module Locadora
 
-one sig Locadora {
+one sig Inventario {
 	veiculo: set Veiculo
 }
 
 abstract sig Veiculo {
 	anos: some Ano,
 	roda: set Roda,
-	cliente: lone Cliente,
-	diaAlugado: set Dia
 }
 
 sig Inativo extends Veiculo { }
@@ -18,20 +16,33 @@ sig Helicoptero in Veiculo { }
 sig Motocicleta in Veiculo { }
 sig Carro in Veiculo { }
 
+sig Alugado in Veiculo {
+	cliente: one Cliente,
+	diaAlugado: some Dia,
+	limpeza: one Limpeza,
+	renovar: lone Renovado
+}
+
 sig Ano { }
 
 sig Roda { }
 
 sig Cliente { 
-	veiculoAlugado: some Veiculo	
+	veiculoAlugado: some Alugado	
 }
 
 sig Dia { }
 
+one sig Limpeza {
+	dia: one Dia
+}
+
+sig Renovado { }
+
 ---------------------------------Fatos-------------------------------
 
 fact VeiculosEmLocadora {
-	one l: Locadora | all v: Veiculo | v in l.veiculo
+	all i: Inventario | all v: Veiculo | v in i.veiculo
 }
 
 fact AnosDeAtividade {
@@ -52,20 +63,20 @@ fact NumeroRodas {
 fact DiasAlugados {
 	all v: Veiculo | #getDiasAlugados[v] <= 5
 	all v: Veiculo | veiculoAlugadoTemDias[v]
+
+	one i: Inventario | all a: getAlugado[i] | no a.cliente => no a.diaAlugado
 }
 
 fact Aluguel {
 	veiculoAlugado = ~cliente
 }
 
-fact SemDiasSeNaoAlugado {
-	all v: Veiculo | no v.cliente => no v.diaAlugado
-}
-
 fact {
 	no r: Roda | no roda.r
 	no d: Dia | no diaAlugado.d
 	no a: Ano | no anos.a
+	no l: Limpeza | no limpeza.l
+	no n: Renovado | no renovar.n
 }
 
 ---------------------------------------------------------------------
@@ -76,6 +87,10 @@ pred anosInativos[i: Inativo] {
 
 pred anosAtivos[a: Ativo] {
 	#a.anos <= 5
+}
+
+pred umAnoAtivo[a: Ativo] {
+	#a.anos = 1
 }
 
 pred rodaHelicoptero [h: Helicoptero] {
@@ -90,8 +105,8 @@ pred rodaCarro [c: Carro] {
 	#c.roda = 4
 }
 
-pred veiculoAlugadoTemDias[v: Veiculo] {
-	(#getCliente[v] > 0) => (#getDiasAlugados[v] > 0)
+pred veiculoAlugadoTemDias[a: Alugado] {
+	(#getCliente[a] > 0) => (#getDiasAlugados[a] > 0)
 }
 
 --------------------------------------Funcao---------------------------------------
@@ -104,6 +119,28 @@ fun getCliente[v: Veiculo] : lone Cliente {
 	v.cliente
 }
 
+fun getAlugado[i: Inventario] : set Alugado {
+	Alugado
+}
+
+fun getVeiculoAlugado[c: Cliente] : set Veiculo {
+	c.veiculoAlugado
+}
+
+------------------------------------Assert----------------------------------------
+
+assert todoClienteTemVeiculo {
+	all c: Cliente | #getVeiculoAlugado[c] > 0
+}
+
+assert todoVeiculoAlugadoTemDias {
+	all a: Alugado | #getDiasAlugados[a] > 0
+}
+
+
+check todoClienteTemVeiculo for 20
+check todoVeiculoAlugadoTemDias for 20
+
 pred show [ ] { }
 
-run show for 4
+run show for 3
