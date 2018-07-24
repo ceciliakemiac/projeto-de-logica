@@ -1,7 +1,8 @@
 module Locadora
 
 one sig Inventario {
-	veiculo: set Veiculo
+	ativo: set Ativo,
+	inativo: set Inativo
 }
 
 abstract sig Veiculo {
@@ -9,49 +10,69 @@ abstract sig Veiculo {
 	roda: set Roda,
 }
 
-sig Inativo extends Veiculo { }
-sig Ativo extends Veiculo { }
+sig Inativo in Veiculo { }
+sig Ativo in Veiculo { }
 
-sig Helicoptero in Veiculo { }
-sig Motocicleta in Veiculo { }
-sig Carro in Veiculo { }
+sig UmAno, DoisAnos, TresAnos, QuatroAnos, CincoAnos in Ativo { }
+
+sig Helicoptero extends Veiculo { }
+sig Motocicleta extends Veiculo { }
+sig Carro extends Veiculo { }
 
 sig Alugado in Veiculo {
 	cliente: one Cliente,
-	diaAlugado: some Dia,
+	diaAlugado: some DiaAlugado,
 	limpeza: one Limpeza,
 	renovar: lone Renovado
 }
 
 sig Ano { }
 
-sig Roda { }
-
-sig Cliente { 
-	veiculoAlugado: some Alugado	
+sig Roda { 
+	veiculo: one Veiculo
 }
 
-sig Dia { }
+sig Cliente { 
+	veiculoAlugado: some Alugado,
+	inventario: one Inventario	
+}
 
-one sig Limpeza {
-	dia: one Dia
+abstract sig Dia { }
+
+sig DiaAlugado extends Dia {
+	veiculo: one Veiculo
+}
+
+sig DiaLimpeza extends Dia {
+	paraLimpeza: one Limpeza
+}
+
+sig Limpeza {
+	dia: one DiaLimpeza,
+	veiculo: one Alugado
 }
 
 sig Renovado { }
 
----------------------------------Fatos-------------------------------
+--Fatos
 
 fact VeiculosEmLocadora {
-	all i: Inventario | all v: Veiculo | v in i.veiculo
+	 all i: Inventario | all v: Veiculo | v in i.ativo or v in i.inativo
 }
 
 fact AnosDeAtividade {
 	all i: Inativo | anosInativos[i]
 	all a: Ativo | anosAtivos[a]
+
+	all a: UmAno | umAnoAtivo[a]
+	all a: DoisAnos | doisAnosAtivo[a]
+	all a: TresAnos | tresAnosAtivo[a]
+	all a: QuatroAnos | quatroAnosAtivo[a]
+	all a: CincoAnos | cincoAnosAtivo[a]
 }
  
-fact TotalVeiculo {
-	Helicoptero + Motocicleta + Carro = Veiculo
+fact TotalAtivo {
+	UmAno + DoisAnos + TresAnos + QuatroAnos + CincoAnos = Ativo
 }
 
 fact NumeroRodas {
@@ -62,24 +83,28 @@ fact NumeroRodas {
 
 fact DiasAlugados {
 	all v: Veiculo | #getDiasAlugados[v] <= 5
-	all v: Veiculo | veiculoAlugadoTemDias[v]
-
-	one i: Inventario | all a: getAlugado[i] | no a.cliente => no a.diaAlugado
 }
 
-fact Aluguel {
+fact Transposicao {
+	--relações que são opostas
+
 	veiculoAlugado = ~cliente
+	veiculo = ~roda
+	veiculo = ~limpeza
+	veiculo = ~diaAlugado
+	dia = ~paraLimpeza
+}
+
+fact Limpeza {
+	all l: Limpeza, a: limpeza.l | no a => no l
 }
 
 fact {
-	no r: Roda | no roda.r
-	no d: Dia | no diaAlugado.d
-	no a: Ano | no anos.a
-	no l: Limpeza | no limpeza.l
-	no n: Renovado | no renovar.n
+	all i: Inventario | no a: getAno[i] | no anos.a
+	all i: Inventario | no n: getRenovado[i] | no renovar.n
 }
 
----------------------------------------------------------------------
+--Predicados
 
 pred anosInativos[i: Inativo] {
 	#i.anos > 5
@@ -89,8 +114,24 @@ pred anosAtivos[a: Ativo] {
 	#a.anos <= 5
 }
 
-pred umAnoAtivo[a: Ativo] {
+pred umAnoAtivo[a: UmAno] {
 	#a.anos = 1
+}
+
+pred doisAnosAtivo[a: DoisAnos] {
+	#a.anos = 2
+}
+
+pred tresAnosAtivo[a: TresAnos] {
+	#a.anos = 3
+}
+
+pred quatroAnosAtivo[a: QuatroAnos] {
+	#a.anos = 4
+}
+
+pred cincoAnosAtivo[a: CincoAnos] {
+	#a.anos = 5
 }
 
 pred rodaHelicoptero [h: Helicoptero] {
@@ -105,29 +146,29 @@ pred rodaCarro [c: Carro] {
 	#c.roda = 4
 }
 
-pred veiculoAlugadoTemDias[a: Alugado] {
-	(#getCliente[a] > 0) => (#getDiasAlugados[a] > 0)
-}
-
---------------------------------------Funcao---------------------------------------
+--Funções
 
 fun getDiasAlugados[v: Veiculo] : set Dia {
 	v.diaAlugado
-}
-
-fun getCliente[v: Veiculo] : lone Cliente {
-	v.cliente
-}
-
-fun getAlugado[i: Inventario] : set Alugado {
-	Alugado
 }
 
 fun getVeiculoAlugado[c: Cliente] : set Veiculo {
 	c.veiculoAlugado
 }
 
-------------------------------------Assert----------------------------------------
+fun getAno[i: Inventario] : set Ano {
+	Ano
+}
+
+fun getRenovado[i: Inventario] : set Renovado {
+	Renovado
+}
+
+fun getRodas[v: Veiculo] : set Roda {
+	v.roda
+}
+
+--Asserts
 
 assert todoClienteTemVeiculo {
 	all c: Cliente | #getVeiculoAlugado[c] > 0
@@ -137,10 +178,14 @@ assert todoVeiculoAlugadoTemDias {
 	all a: Alugado | #getDiasAlugados[a] > 0
 }
 
+assert todoHelicopteroNaoTemRoda {
+	all h: Helicoptero | #getRodas[h] = 0
+}
 
 check todoClienteTemVeiculo for 20
 check todoVeiculoAlugadoTemDias for 20
+check todoHelicopteroNaoTemRoda for 20
 
 pred show [ ] { }
 
-run show for 3
+run show for 2
