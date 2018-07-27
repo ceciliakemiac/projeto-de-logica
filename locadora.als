@@ -182,9 +182,31 @@ assert todoHelicopteroNaoTemRoda {
 	all h: Helicoptero | #getRodas[h] = 0
 }
 
+assert todoCarroTemQuatroRodas {
+	all c:Carro | #getRodas[c] = 4
+}
+
+assert todaMotocicletaTemDuasRodas {
+	all m:Motocicleta | #getRodas[m] = 2
+}
+
+assert todoVeiculoEhAlugadoPorUmClientePorVez {
+	all a:Alugado | #a.cliente = 1
+}
+
+assert todoVeiculoEstaCadastradoNoInventario {
+	all v:Veiculo, i:Inventario | v in i.inativo or v in i.ativo
+}
+
+
+--Checks
 check todoClienteTemVeiculo for 20
 check todoVeiculoAlugadoTemDias for 20
 check todoHelicopteroNaoTemRoda for 20
+check todoCarroTemQuatroRodas for 20
+check todaMotocicletaTemDuasRodas for 20
+check todoVeiculoEhAlugadoPorUmClientePorVez for 20
+check todoVeiculoEstaCadastradoNoInventario for 20
 
 pred show [ ] { }
 
